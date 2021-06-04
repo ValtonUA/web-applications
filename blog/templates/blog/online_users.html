@@ -1,0 +1,16 @@
+{% extends "blog/base.html" %}
+{% block content %}
+<h2>Currently connected</h2>
+<table>
+    <thead>
+        <tr><th>User</th> <th>Date connected</th></tr>
+    </thead>
+    <tbody>
+    {% for item in online_users %}
+        <tr>
+            <td>{{item.user.username}}</td> <td>{{item.date_connected}}</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endblock content %}

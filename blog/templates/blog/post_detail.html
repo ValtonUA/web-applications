@@ -1,0 +1,66 @@
+{% extends "blog/base.html" %}
+{% block content %}
+  <article class="media content-section">
+    <img class="rounded-circle article-img" src="{{ object.author.profile.image.url }}">
+    <div class="media-body">
+      <div class="article-metadata">
+        <a class="mr-2" href="{% url 'user-posts' object.author.username %}">{{ object.author }}</a>
+        <small class="text-muted">{{ object.date_posted|date:"F d, Y" }}</small>
+        {% if object.author == user %}
+          <div>
+            <a class="btn btn-secondary btn-sm mt-1 mb-1" href="{% url 'post-update' object.id %}">Update</a>
+            <a class="btn btn-danger btn-sm mt-1 mb-1" href="{% url 'post-delete' object.id %}">Delete</a>
+          </div>
+        {% endif %}
+      </div>
+      <h2 class="article-title">{{ object.title }}</h2>
+      <p class="article-content">{{ object.content }}</p>
+    </div>
+  </article>
+  <h2>Comments</h2>
+  <div id="commentsBlock">
+        {% for comment in comment_list %}
+            <div>
+                <textarea cols="100" rows="4" disabled>{{comment.text}}</textarea>
+                <p>by {{comment.author.username}} at  {{comment.date|date:"d.m.Y H:i"}}</p>
+            </div>
+        {% endfor %}
+    </div>
+    {{ object.id|json_script:"post_id" }}
+
+    <textarea id="addComment" cols="100" rows="4"></textarea>
+    <input id="submit" type="button" value="Send">
+
+    <script>
+        const post_id = JSON.parse(document.getElementById('post_id').textContent);
+
+        const chatSocket = new WebSocket(
+            'ws://'
+            + window.location.host
+            + '/ws/blog/'
+            + post_id
+            + '/'
+        );
+
+        chatSocket.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+            document.querySelector('#commentsBlock').innerHTML = document.querySelector('#commentsBlock').innerHTML
+             + '<div><textarea cols="100" rows="4" disabled>' + data.text + '</textarea>'
+                +'<p>by ' + data.author+ ' at ' + data.date + '</p></div>';
+        };
+
+        chatSocket.onclose = function(e) {
+
+            console.error('Chat socket closed unexpectedly');
+        };
+
+        document.querySelector('#submit').onclick = function(e) {
+            const $addComment = document.querySelector('#addComment');
+            chatSocket.send(JSON.stringify({
+                'post_id': post_id,
+                'commentText': $addComment.value,
+            }));
+            $addComment.value = '';
+        };
+    </script>
+{% endblock content %}
